@@ -1,9 +1,9 @@
-import Button from "../components/Button";
+import ButtonComponent from "../components/ButtonComponent";
 
 export default function Home() {
   return (
     <section>
-      <Button />
+      <ButtonComponent />
     </section>
   );
 }
