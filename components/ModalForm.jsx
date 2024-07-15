@@ -12,7 +12,7 @@ import ModalSideBar from "./ModalSideBar.jsx";
 
 const ModalForm = () => {
   const [loading, setLoading] = useState([]);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
+
   const [inputSets, setInputSets] = useState([
     {
       productName: "product1",
@@ -84,7 +84,6 @@ const ModalForm = () => {
   };
 
   const onSubmit = (data) => {
-    setLoadingSubmit(true);
     const products = inputSets.map((_, index) => {
       return {
         productName: data[`product${index}`],
@@ -213,7 +212,6 @@ const ModalForm = () => {
             <div className="flex justify-end gap-2">
               <Button
                 type="submit"
-                disabled={loadingSubmit}
                 className="bg-[#005AA0] sm:w-3/12 w-5/12 h-12 text-white hover:bg-blue-950 rounded-xl"
               >
                 Check In
