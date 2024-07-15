@@ -1,9 +1,9 @@
 "use client";
 
 import ModalForm from "./ModalForm";
-import ModalSideBar from "./ModalSideBar";
 import { Dialog, DialogOverlay, DialogContent } from "./ui/dialog";
 import { useRouter } from "next/navigation";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default function Modal({ openModal, setOpenModal }) {
   const router = useRouter();
@@ -21,8 +21,10 @@ export default function Modal({ openModal, setOpenModal }) {
   return (
     <Dialog defaultOpen={true} open={openModal} onOpenChange={handleOpenChange}>
       <DialogOverlay>
-        <DialogContent className="overflow-y-hidden w-full  max-w-5xl ">
-          <ModalForm />
+        <DialogContent className=" overflow-y-auto   w-full max-h-screen  max-w-5xl ">
+          <ScrollArea className=" rounded-md   p-4">
+            <ModalForm />
+          </ScrollArea>
         </DialogContent>
       </DialogOverlay>
     </Dialog>

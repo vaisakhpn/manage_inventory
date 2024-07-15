@@ -40,6 +40,7 @@ const Button = React.forwardRef(
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        disabled={false}
         {...props}
       />
     );

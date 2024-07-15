@@ -5,7 +5,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form";
+} from "../components/ui/form";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { product } from "@/data/product";
 
 const CustomSelectTag = ({ control, name, label, placeholder }) => {
+  const options = name.startsWith("product")
+    ? product.products
+    : product.reasons;
   return (
     <div>
       <FormField
@@ -29,19 +33,22 @@ const CustomSelectTag = ({ control, name, label, placeholder }) => {
               <div className="flex w-full flex-col">
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  defaultValue={field.value || ""}
                 >
                   <FormControl>
-                    <SelectTrigger className="w-[300px] text-16 placeholder:text-16  border-gray-300 text-gray-400  ">
+                    <SelectTrigger className="sm:w-[300px] w-[275px] text-16 placeholder:text-16 border-gray-300 text-gray-700">
                       <SelectValue placeholder={placeholder} />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Motor PCB">Motor PCB</SelectItem>
+                  <SelectContent className="text-black">
+                    {options.map((data) => (
+                      <SelectItem key={data.id} value={data.value}>
+                        {data.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-
-                <FormMessage className=" text-12 text-red-500" />
+                <FormMessage className="text-12 text-red-500" />
               </div>
             </FormItem>
           </div>
