@@ -2,7 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
-import { createFormSchemaForSets } from "../lib/utils.js";
+import {
+  createFormSchemaForSets,
+  generateNewDefaultValues,
+  resetSingleRemainingSet,
+} from "../lib/utils.js";
 import { Button } from "@/components/ui/button";
 import { Form } from "./ui/form";
 import CustomInput from "./CustomInput";
@@ -129,7 +133,7 @@ const ModalForm = () => {
     } else {
       toast({
         title: "Error",
-        description: "Please fill all serial number fields before saving.",
+        description: "Serial number is repeated or not entered",
       });
       return false;
     }
@@ -173,17 +177,18 @@ const ModalForm = () => {
     try {
       if (inputSets.length === 1) {
         return;
+      } else {
+        const newInputSets = inputSets.filter((_, i) => i !== index);
+        setInputSets(newInputSets);
+        const newSchema = createFormSchemaForSets(newInputSets.length);
+        form.resolver = zodResolver(newSchema);
+        const newDefaultValues = generateNewDefaultValues(
+          form,
+          newInputSets,
+          index
+        );
+        reset(newDefaultValues);
       }
-
-      const newInputSets = inputSets.filter((_, i) => i !== index);
-      setInputSets(newInputSets);
-
-      const newSchema = createFormSchemaForSets(newInputSets.length);
-      const newDefaultValues = {
-        serialNumbers: newInputSets.map(() => []),
-      };
-      reset(newDefaultValues);
-      form.resolver = zodResolver(newSchema);
     } catch (error) {
       console.log("Error:", error);
     }
@@ -236,7 +241,6 @@ const ModalForm = () => {
                             name={`product${index}`}
                             label="Products"
                             placeholder="Select a product"
-                            disabled={loading[index]}
                           />
                         </div>
                         <div className="w-full">
@@ -246,7 +250,6 @@ const ModalForm = () => {
                             placeholder="12"
                             control={form.control}
                             type="number"
-                            disabled={loading[index]}
                           />
                         </div>
                       </div>
@@ -270,7 +273,6 @@ const ModalForm = () => {
                         name={`usage${index}`}
                         label="Usage"
                         placeholder="In Milk Analyzer"
-                        disabled={loading[index]}
                         control={form.control}
                       />
                     </div>
@@ -278,7 +280,6 @@ const ModalForm = () => {
                       <CustomSelectTag
                         control={form.control}
                         name={`reason${index}`}
-                        disabled={loading[index]}
                         label="Reason"
                         placeholder="Select a reason"
                       />
