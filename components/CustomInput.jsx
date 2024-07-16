@@ -8,7 +8,14 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 
-const CustomInput = ({ control, name, placeholder, label, type = "text" }) => {
+const CustomInput = ({
+  control,
+  name,
+  placeholder,
+  label,
+  disabled,
+  type = "text",
+}) => {
   return (
     <div className="w-full">
       <FormField
@@ -24,6 +31,7 @@ const CustomInput = ({ control, name, placeholder, label, type = "text" }) => {
                 <FormControl>
                   <Input
                     placeholder={placeholder}
+                    disabled={disabled}
                     type={type}
                     className="text-16 placeholder:text-16 border-gray-300 text-gray-900 placeholder:text-gray-400"
                     {...field}

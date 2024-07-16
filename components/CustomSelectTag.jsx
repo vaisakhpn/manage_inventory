@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { product } from "@/data/product";
 
-const CustomSelectTag = ({ control, name, label, placeholder }) => {
+const CustomSelectTag = ({ control, name, label, placeholder, disabled }) => {
   const options = name.startsWith("product")
     ? product.products
     : product.reasons;
@@ -36,7 +36,10 @@ const CustomSelectTag = ({ control, name, label, placeholder }) => {
                   defaultValue={field.value || ""}
                 >
                   <FormControl>
-                    <SelectTrigger className="sm:w-[300px] w-[275px] text-16 placeholder:text-16 border-gray-300 text-gray-700">
+                    <SelectTrigger
+                      disabled={disabled}
+                      className="sm:w-[300px] w-[275px] text-16 placeholder:text-16 border-gray-300 text-gray-700"
+                    >
                       <SelectValue placeholder={placeholder} />
                     </SelectTrigger>
                   </FormControl>

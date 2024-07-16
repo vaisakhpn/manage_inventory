@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { createFormSchemaForSets } from "../lib/utils.js";
@@ -9,6 +9,9 @@ import CustomInput from "./CustomInput";
 import CustomSelectTag from "./CustomSelectTag";
 import { Textarea } from "./ui/textarea";
 import ModalSideBar from "./ModalSideBar.jsx";
+
+import { useToast } from "@/components/ui/use-toast";
+import { PiTrashSimpleFill } from "react-icons/pi";
 
 const ModalForm = () => {
   const [loading, setLoading] = useState([]);
@@ -21,6 +24,7 @@ const ModalForm = () => {
       descriptionName: "description1",
     },
   ]);
+  const { toast } = useToast();
 
   const form = useForm({
     resolver: zodResolver(createFormSchemaForSets(inputSets.length)),
@@ -48,13 +52,55 @@ const ModalForm = () => {
   };
 
   const handleSerialNumberClick = async (index) => {
-    const isValid = await trigger([
-      `product${index}`,
-      `quantity${index}`,
-      `usage${index}`,
-      `reason${index}`,
-      `description${index}`,
-    ]);
+    try {
+      const isValid = await trigger([
+        `product${index}`,
+        `quantity${index}`,
+        `usage${index}`,
+        `reason${index}`,
+        `description${index}`,
+      ]);
+
+      if (isValid) {
+        setLoading((prevLoading) => {
+          const newLoading = [...prevLoading];
+          newLoading[index] = true;
+          return newLoading;
+        });
+        const values = getValues();
+        const quantity = values[`quantity${index}`];
+        const product = values[`product${index}`];
+
+        if (quantity && !isNaN(quantity)) {
+          const existingSerialNumbers = JSON.parse(
+            localStorage.getItem(product) || "[]"
+          );
+
+          const newSerialNumbers = Array.from(
+            { length: parseInt(quantity) },
+            (_, i) => ({
+              id: existingSerialNumbers.length + i + 1,
+              serialNumber: "",
+            })
+          );
+
+          const serialNumbers = [...existingSerialNumbers, ...newSerialNumbers];
+
+          setValue(`serialNumbers${index}`, serialNumbers);
+          setLoading((prevLoading) => {
+            const newLoading = [...prevLoading];
+            newLoading[index] = false;
+            return newLoading;
+          });
+        }
+      }
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  };
+
+  const saveSerialNumbers = async (index) => {
+    const isValid = await trigger(`serialNumbers${index}`);
 
     if (isValid) {
       setLoading((prevLoading) => {
@@ -63,45 +109,90 @@ const ModalForm = () => {
         return newLoading;
       });
       const values = getValues();
-      const quantity = values[`quantity${index}`];
-      if (quantity && !isNaN(quantity)) {
-        const serialNumbers = Array.from(
-          { length: parseInt(quantity) },
-          (_, i) => ({
-            id: i + 1,
-            serialNumber: "",
-          })
-        );
+      const product = values[`product${index}`];
+      const serialNumbers = values[`serialNumbers${index}`];
 
-        setValue(`serialNumbers${index}`, serialNumbers);
-        setLoading((prevLoading) => {
-          const newLoading = [...prevLoading];
-          newLoading[index] = true;
-          return newLoading;
-        });
-      }
+      localStorage.setItem(product, JSON.stringify(serialNumbers));
+
+      toast({
+        title: "Success",
+        description: "Serial numbers saved successfully!",
+      });
+
+      setLoading((prevLoading) => {
+        const newLoading = [...prevLoading];
+        newLoading[index] = true;
+        return newLoading;
+      });
+
+      return true;
+    } else {
+      toast({
+        title: "Error",
+        description: "Please fill all serial number fields before saving.",
+      });
+      return false;
     }
   };
 
-  const onSubmit = (data) => {
-    const products = inputSets.map((_, index) => {
-      return {
-        productName: data[`product${index}`],
-        quantity: data[`quantity${index}`],
-        usage: data[`usage${index}`],
-        reason: data[`reason${index}`],
-        description: data[`description${index}`],
-        serialNumbers: data[`serialNumbers${index}`] || [],
-      };
-    });
+  const onSubmit = async (data) => {
+    try {
+      const products = inputSets.map((_, index) => {
+        return {
+          productName: data[`product${index}`],
+          quantity: data[`quantity${index}`],
+          usage: data[`usage${index}`],
+          reason: data[`reason${index}`],
+          description: data[`description${index}`],
+          serialNumbers: data[`serialNumbers${index}`] || [],
+        };
+      });
 
-    console.log(products);
+      console.log(products);
+
+      let allValid = true;
+      for (let i = 0; i < inputSets.length; i++) {
+        const result = await saveSerialNumbers(i);
+        if (!result) {
+          allValid = false;
+        }
+      }
+
+      if (allValid) {
+        toast({
+          title: "Submitted",
+          description: "Your form has been submitted successfully!",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleRemoveProduct = (index) => {
+    try {
+      if (inputSets.length === 1) {
+        return;
+      }
+
+      const newInputSets = inputSets.filter((_, i) => i !== index);
+      setInputSets(newInputSets);
+
+      const newSchema = createFormSchemaForSets(newInputSets.length);
+      const newDefaultValues = {
+        serialNumbers: newInputSets.map(() => []),
+      };
+      reset(newDefaultValues);
+      form.resolver = zodResolver(newSchema);
+    } catch (error) {
+      console.log("Error:", error);
+    }
   };
 
   return (
     <div className="flex sm:flex-col  w-full max-h-[600px] flex-row justify-center gap-5 py-10">
       <div className="grid grid-cols-1 mt-2 max-h-screen">
-        <h2 className="font-bold text-2xl pl-3 pt-3">Check In/Check Out</h2>
+        <h2 className="font-bold text-2xl pl-3 pt-5">Check In</h2>
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {inputSets.map((set, index) => (
@@ -111,7 +202,14 @@ const ModalForm = () => {
               >
                 <div>
                   <div className="w-full flex justify-end">
-                    <div className="flex justify-end w-1/6">
+                    <div className="flex justify-end items-center w-1/6">
+                      <Button
+                        type="button"
+                        className="bg-red-600 hover:bg-red-500 h-6 rounded-[6px] items-center"
+                        onClick={() => handleRemoveProduct(index)}
+                      >
+                        <PiTrashSimpleFill className="text-white" />
+                      </Button>
                       <Button
                         type="button"
                         className="text-sm w-full flex justify-end font-bold text-blue-600"
@@ -138,6 +236,7 @@ const ModalForm = () => {
                             name={`product${index}`}
                             label="Products"
                             placeholder="Select a product"
+                            disabled={loading[index]}
                           />
                         </div>
                         <div className="w-full">
@@ -147,6 +246,7 @@ const ModalForm = () => {
                             placeholder="12"
                             control={form.control}
                             type="number"
+                            disabled={loading[index]}
                           />
                         </div>
                       </div>
@@ -170,6 +270,7 @@ const ModalForm = () => {
                         name={`usage${index}`}
                         label="Usage"
                         placeholder="In Milk Analyzer"
+                        disabled={loading[index]}
                         control={form.control}
                       />
                     </div>
@@ -177,6 +278,7 @@ const ModalForm = () => {
                       <CustomSelectTag
                         control={form.control}
                         name={`reason${index}`}
+                        disabled={loading[index]}
                         label="Reason"
                         placeholder="Select a reason"
                       />
@@ -199,12 +301,14 @@ const ModalForm = () => {
                     />
                   </div>
                 </div>
-                <div className="flex flex-col gap-4">
+                <div key={index} className="flex flex-col gap-4">
                   <ModalSideBar
                     control={control}
                     watch={watch}
                     index={index}
                     setValue={setValue}
+                    saveSerialNumbers={saveSerialNumbers}
+                    disabled={loading[index]}
                   />
                 </div>
               </div>
